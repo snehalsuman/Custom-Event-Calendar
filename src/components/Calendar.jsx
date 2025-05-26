@@ -15,7 +15,7 @@ import {
   useDroppable,
 } from "@dnd-kit/core";
 
-function DraggableEvent({ event }) {
+function DraggableEvent({ event, onClick }) {
   const { attributes, listeners, setNodeRef } = useDraggable({ id: event.id });
 
   return (
@@ -23,7 +23,8 @@ function DraggableEvent({ event }) {
       ref={setNodeRef}
       {...listeners}
       {...attributes}
-      className={"custom-event"}
+      onClick={onClick}
+      className="custom-event mb-1 p-1 rounded text-xs cursor-move hover:opacity-80 transition-opacity"
       style={{ backgroundColor: event.color || undefined }}
     >
       {event.time && <strong>{event.time}</strong>} {event.title}
@@ -31,7 +32,7 @@ function DraggableEvent({ event }) {
   );
 }
 
-function DroppableCell({ day, children, currentDate }) {
+function DroppableCell({ day, children, currentDate, onDayClick }) {
   const { isOver, setNodeRef } = useDroppable({ id: day.toDateString() });
   const today = new Date();
   const isToday =
@@ -42,17 +43,16 @@ function DroppableCell({ day, children, currentDate }) {
   return (
     <div
       ref={setNodeRef}
-      className={`custom-calendar-cell ${isToday ? "custom-calendar-cell-today" : ""} ${isOver ? "ring-2 ring-green-400" : ""}`}
+      onClick={() => onDayClick(day)}
+      className={`h-24 p-1 border border-blue-100 flex flex-col items-start relative bg-white hover:bg-blue-50 transition-all duration-150 cursor-pointer
+        ${isToday ? "ring-2 ring-blue-500 bg-blue-200 font-bold" : ""}
+        ${isOver ? "ring-2 ring-green-400" : ""}
+      `}
     >
-      <div className="flex justify-between items-center">
-        <span className="text-sm">{format(day, "d")}</span>
-        {isToday && (
-          <span className="text-[10px] px-1 py-0.5 rounded bg-blue-500 text-white ml-1">
-            Today
-          </span>
-        )}
+      <span className="text-xs text-gray-500">{format(day, "d")}</span>
+      <div className="flex flex-col w-full mt-1">
+        {children}
       </div>
-      <div className="flex flex-col overflow-auto text-xs mt-1">{children}</div>
     </div>
   );
 }
@@ -78,14 +78,18 @@ export default function Calendar({
 
   return (
     <div className="custom-calendar-grid">
-      <div className="custom-calendar-header">
-        {weekdays.map((day) => (
-          <div key={day} className="custom-calendar-header-cell">{day}</div>
-        ))}
-      </div>
-
       <DndContext onDragEnd={handleDragEnd}>
-        <div className="grid grid-cols-7 gap-1 p-2 bg-blue-50">
+        <div className="grid grid-cols-7">
+          {/* Weekday headers */}
+          {weekdays.map((day) => (
+            <div
+              key={day}
+              className="py-2 text-center font-semibold text-blue-700 bg-blue-100 border-b border-blue-200"
+            >
+              {day}
+            </div>
+          ))}
+          {/* Day cells */}
           {days.map((day) => {
             const dateKey = day.toDateString();
             const dayEvents = events.filter(
@@ -93,21 +97,23 @@ export default function Calendar({
             );
 
             return (
-              <div key={day.toISOString()} onClick={() => onDayClick(day)}>
-                <DroppableCell day={day} currentDate={currentDate}>
-                  {dayEvents.map((event) => (
-                    <div
-                      key={event.id}
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        onEventClick(event);
-                      }}
-                    >
-                      <DraggableEvent event={event} />
-                    </div>
-                  ))}
-                </DroppableCell>
-              </div>
+              <DroppableCell 
+                key={day.toISOString()} 
+                day={day} 
+                currentDate={currentDate}
+                onDayClick={onDayClick}
+              >
+                {dayEvents.map((event) => (
+                  <DraggableEvent
+                    key={event.id}
+                    event={event}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onEventClick(event);
+                    }}
+                  />
+                ))}
+              </DroppableCell>
             );
           })}
         </div>
