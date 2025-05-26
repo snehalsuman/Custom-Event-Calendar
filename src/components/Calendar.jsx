@@ -17,14 +17,35 @@ import {
 
 function DraggableEvent({ event, onClick }) {
   const { attributes, listeners, setNodeRef } = useDraggable({ id: event.id });
+  // Track mouse position to distinguish click vs drag
+  const mouseDownPos = React.useRef(null);
+
+  function handleMouseDown(e) {
+    mouseDownPos.current = { x: e.clientX, y: e.clientY };
+    if (listeners.onMouseDown) listeners.onMouseDown(e);
+  }
+
+  function handleMouseUp(e) {
+    if (!mouseDownPos.current) return;
+    const dx = Math.abs(e.clientX - mouseDownPos.current.x);
+    const dy = Math.abs(e.clientY - mouseDownPos.current.y);
+    // If mouse didn't move much, treat as click
+    if (dx < 5 && dy < 5) {
+      e.stopPropagation();
+      onClick(e);
+    }
+    mouseDownPos.current = null;
+    if (listeners.onMouseUp) listeners.onMouseUp(e);
+  }
 
   return (
     <div
       ref={setNodeRef}
-      {...listeners}
       {...attributes}
-      onClick={onClick}
-      className="custom-event mb-1 p-1 rounded text-xs cursor-move hover:opacity-80 transition-opacity"
+      {...listeners}
+      onMouseDown={handleMouseDown}
+      onMouseUp={handleMouseUp}
+      className="custom-event mb-1 p-1 rounded text-xs cursor-move hover:opacity-80 transition-opacity relative z-10"
       style={{ backgroundColor: event.color || undefined }}
     >
       {event.time && <strong>{event.time}</strong>} {event.title}
@@ -43,7 +64,12 @@ function DroppableCell({ day, children, currentDate, onDayClick }) {
   return (
     <div
       ref={setNodeRef}
-      onClick={() => onDayClick(day)}
+      onClick={(e) => {
+        // Only trigger onDayClick if we're clicking the cell itself, not its children
+        if (e.target === e.currentTarget) {
+          onDayClick(day);
+        }
+      }}
       className={`h-24 p-1 border border-blue-100 flex flex-col items-start relative bg-white hover:bg-blue-50 transition-all duration-150 cursor-pointer
         ${isToday ? "ring-2 ring-blue-500 bg-blue-200 font-bold" : ""}
         ${isOver ? "ring-2 ring-green-400" : ""}
