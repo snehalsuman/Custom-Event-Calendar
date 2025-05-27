@@ -99,17 +99,8 @@ src/
 
 ---
 
-## 🧪 Future Enhancements
-
-* ✅ Conflict management (avoid overlapping times)
-* ✅ Custom recurrence (e.g., every 2 weeks)
-* ✅ Export/import events as JSON
-* ✅ Category filtering
-
----
-
 ## 👨‍💻 Author
 
-Built with ❤️ by \[Your Name]
+Built with ❤️ by \[Snehal Suman]
 
 Have questions or suggestions? Feel free to open an issue or contact me.
